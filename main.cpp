@@ -1,7 +1,9 @@
 #include "unique_ptr.hpp"
+#include "shared_ptr.hpp" // подключаем твой shared_ptr
 #include <iostream>
 #include <string>
 
+// ===================== Test Classes =====================
 class TestClass {
 public:
     int value;
@@ -20,33 +22,29 @@ public:
     }
 };
 
+// ===================== unique_ptr Tests =====================
 void test_constructor() {
-    std::cout << "\n=== Testing Constructors ===\n";
+    std::cout << "\n=== Testing unique_ptr Constructors ===\n";
     
-    // Default constructor
     unique_ptr<int> ptr1;
     std::cout << "ptr1 is " << (ptr1 ? "valid" : "null") << "\n";
     
-    // Constructor with raw pointer
     unique_ptr<int> ptr2(new int(42));
     std::cout << "ptr2 value: " << *ptr2 << "\n";
     
-    // Constructor with custom class
     unique_ptr<TestClass> ptr3(new TestClass(100, "object1"));
 }
 
 void test_move_semantics() {
-    std::cout << "\n=== Testing Move Semantics ===\n";
+    std::cout << "\n=== Testing unique_ptr Move Semantics ===\n";
     
     unique_ptr<int> ptr1(new int(10));
     std::cout << "ptr1 value: " << *ptr1 << "\n";
     
-    // Move constructor
     unique_ptr<int> ptr2(std::move(ptr1));
     std::cout << "After move - ptr1 is " << (ptr1 ? "valid" : "null") << "\n";
     std::cout << "After move - ptr2 value: " << *ptr2 << "\n";
     
-    // Move assignment
     unique_ptr<int> ptr3(new int(20));
     ptr3 = std::move(ptr2);
     std::cout << "After assignment - ptr2 is " << (ptr2 ? "valid" : "null") << "\n";
@@ -54,50 +52,38 @@ void test_move_semantics() {
 }
 
 void test_modifiers() {
-    std::cout << "\n=== Testing Modifiers ===\n";
+    std::cout << "\n=== Testing unique_ptr Modifiers ===\n";
     
     unique_ptr<int> ptr1(new int(50));
-    
-    // Test release
     int* raw = ptr1.release();
     std::cout << "After release - ptr1 is " << (ptr1 ? "valid" : "null") << "\n";
     std::cout << "Raw pointer value: " << *raw << "\n";
-    delete raw; // Must manually delete after release
+    delete raw;
     
-    // Test reset
     unique_ptr<int> ptr2(new int(60));
     ptr2.reset(new int(70));
     std::cout << "After reset - ptr2 value: " << *ptr2 << "\n";
     
-    // Test swap
     unique_ptr<int> ptr3(new int(80));
     unique_ptr<int> ptr4(new int(90));
     std::cout << "Before swap - ptr3: " << *ptr3 << ", ptr4: " << *ptr4 << "\n";
-    ptr3.swap(&ptr4);
+    ptr3.swap(ptr4);
     std::cout << "After swap - ptr3: " << *ptr3 << ", ptr4: " << *ptr4 << "\n";
 }
 
 void test_observers() {
-    std::cout << "\n=== Testing Observers ===\n";
+    std::cout << "\n=== Testing unique_ptr Observers ===\n";
     
     unique_ptr<TestClass> ptr(new TestClass(123, "observer_test"));
-    
-    // Test get()
     TestClass* raw = ptr.get();
     std::cout << "Raw pointer via get(): " << raw << "\n";
-    
-    // Test operator bool
     std::cout << "ptr is " << (ptr ? "valid" : "null") << "\n";
-    
-    // Test dereference operator
     (*ptr).display();
-    
-    // Test arrow operator
     ptr->display();
 }
 
 void test_comparisons() {
-    std::cout << "\n=== Testing Comparison Operators ===\n";
+    std::cout << "\n=== Testing unique_ptr Comparison Operators ===\n";
     
     unique_ptr<int> ptr1(new int(10));
     unique_ptr<int> ptr2(new int(20));
@@ -111,7 +97,7 @@ void test_comparisons() {
 }
 
 void test_self_assignment() {
-    std::cout << "\n=== Testing Self-Assignment Protection ===\n";
+    std::cout << "\n=== Testing unique_ptr Self-Assignment ===\n";
     
     unique_ptr<int> ptr(new int(42));
     std::cout << "Before self-assignment: " << *ptr << "\n";
@@ -121,7 +107,7 @@ void test_self_assignment() {
 }
 
 void test_memory_cleanup() {
-    std::cout << "\n=== Testing Memory Cleanup ===\n";
+    std::cout << "\n=== Testing unique_ptr Memory Cleanup ===\n";
     
     {
         unique_ptr<TestClass> ptr1(new TestClass(1, "scoped1"));
@@ -131,6 +117,57 @@ void test_memory_cleanup() {
     std::cout << "Scope ended - objects should be destructed\n";
 }
 
+// ===================== shared_ptr Tests =====================
+void test_shared_ptr_basic()
+{
+    std::cout << "\n=== Testing shared_ptr Basic ===\n";
+
+    shared_ptr<int> sp1(new int(42));
+    std::cout << "sp1 use_count: " << sp1.use_count() << "\n";
+
+    // Copy constructor
+    shared_ptr<int> sp2(sp1);
+    std::cout << "After copy, sp1 use_count: " << sp1.use_count() 
+              << ", sp2 use_count: " << sp2.use_count() << "\n";
+
+    // Copy assignment
+    shared_ptr<int> sp3;
+    sp3 = sp1;
+    std::cout << "After copy assignment, sp1 use_count: " << sp1.use_count() 
+              << ", sp3 use_count: " << sp3.use_count() << "\n";
+
+    // Move constructor
+    shared_ptr<int> sp4(std::move(sp3));
+    std::cout << "After move constructor, sp3 is " << (sp3 ? "valid" : "null") 
+              << ", sp4 use_count: " << sp4.use_count() << "\n";
+
+    // Move assignment
+    shared_ptr<int> sp5;
+    sp5 = std::move(sp4);
+    std::cout << "After move assignment, sp4 is " << (sp4 ? "valid" : "null") 
+              << ", sp5 use_count: " << sp5.use_count() << "\n";
+
+    // Reset
+    sp1.reset();
+    std::cout << "After sp1.reset(), sp1 is " << (sp1 ? "valid" : "null") 
+              << ", sp2 use_count: " << sp2.use_count() << "\n";
+
+    // Dereference
+    if(sp2)
+        std::cout << "Dereference sp2: " << *sp2 << "\n";
+}
+
+void test_shared_ptr_self_assignment()
+{
+    std::cout << "\n=== Testing shared_ptr Self-Assignment ===\n";
+
+    shared_ptr<int> sp(new int(99));
+    std::cout << "Before self-assignment, sp use_count: " << sp.use_count() << "\n";
+    sp = sp;
+    std::cout << "After self-assignment, sp use_count: " << sp.use_count() << "\n";
+}
+
+// ===================== main =====================
 int main() {
     std::cout << "Starting unique_ptr tests...\n";
     
@@ -142,6 +179,11 @@ int main() {
         test_comparisons();
         test_self_assignment();
         test_memory_cleanup();
+
+        std::cout << "\nStarting shared_ptr tests...\n";
+
+        test_shared_ptr_basic();
+        test_shared_ptr_self_assignment();
         
         std::cout << "\n=== All tests completed successfully! ===\n";
     }
