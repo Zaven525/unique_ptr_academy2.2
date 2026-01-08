@@ -14,6 +14,7 @@ class CB
         void release_weak();
         virtual void destroy_data() noexcept { delete _data; }
         virtual void destroy_self() noexcept { delete this; }
+        size_t get_use_count() const noexcept { return _use_count; }
     private: 
         T* _data;
         size_t _use_count;

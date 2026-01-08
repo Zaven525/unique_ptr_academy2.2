@@ -7,9 +7,6 @@
 template <typename T>
 class shared_ptr
 {
-private:
-    T* _data;
-    CB<T>* _sharedCB;
 public:
     // Special functions
     explicit shared_ptr(T* data = nullptr);
@@ -19,21 +16,22 @@ public:
     shared_ptr& operator =(const shared_ptr<T>& other);
     shared_ptr& operator =(unique_ptr<T>&& other) noexcept;
     shared_ptr& operator =(std::nullptr_t);
-    ~shared_ptr() {};
+    ~shared_ptr() noexcept;
 
+public:
     // Modifiers
-    void reset() noexcept { delete _data; }
-    void reset(T* data);
+    void reset(T* data = nullptr);
     void swap( shared_ptr& r ) noexcept { std::swap(*this, r); }
 
     // Observers
     T* get() { return _data; }
+    CB* getCB() { return _sharedCB; }
+
     T& operator *() const noexcept { return *_data; }
     T* operator ->() const noexcept { return _data; }
     size_t use_count() const noexcept { return _sharedCB->get_count(); }
     bool unique() const noexcept { return _sharedCB->_use_count == 1; }
     explicit operator bool() const noexcept { return _data != nullptr; }
-    
     
     // Non-member functions
     friend bool operator== (const shared_ptr<T>& lhs, const shared_ptr<T>& rhs) { return lhs.get() == rhs.get(); }
@@ -43,6 +41,10 @@ public:
     friend bool operator> (const shared_ptr<T>& lhs, const shared_ptr<T>& rhs) {return lhs.get() > rhs.get(); }
     friend bool operator>= (const shared_ptr<T>& lhs, const shared_ptr<T>& rhs) {return lhs.get() >= rhs.get(); }
     friend std::ostream& operator<<(std::ostream& os, const shared_ptr<T>& src) { return os << src.get(); }
+
+private:
+    T* _data;
+    CB<T>* _sharedCB;
 };
 
 // Special functions
@@ -90,7 +92,49 @@ shared_ptr<T>& shared_ptr<T>::operator=(const shared_ptr<T>& other)
     return *this;
 }
 
-//     shared_ptr& operator =(unique_ptr&& other) noexcept;
-//     shared_ptr& operator =(std::nullptr_t);
-//     ~shared_ptr();
+
+
+template<typename T>
+shared_ptr<T>& shared_ptr<T>::operator =(unique_ptr<T>&& other) noexcept
+{
+    if (_sharedCB) _sharedCB->release_count();
+    _data = other.release();
+    if(_data) 
+    {
+        _sharedCB = new CB<T>(_data);
+    } 
+    else
+    {
+        _sharedCB = nullptr;
+    }
+    return *this;
+}
+
+template<typename T>
+shared_ptr<T>::~shared_ptr() noexcept
+{
+   if(_sharedCB) _sharedCB->release_count();
+   _data = nullptr;
+   _sharedCB = nullptr;
+}
+
+
+
+//Modifiers
+template<typename T>
+void shared_ptr<T>::reset(T* data)
+{
+    if (_sharedCB) _sharedCB->release_count();
+
+    _data = data;
+    if (_data)
+    {
+        _sharedCB = new CB<T>(_data);
+    }
+    else
+    {
+        _sharedCB = nullptr;
+    }
+}
+
 
